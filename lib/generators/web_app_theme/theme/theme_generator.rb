@@ -19,7 +19,6 @@ module WebAppTheme
         template  admin_layout_name, "app/views/layouts/#{layout_name.underscore}.html.erb"
       when 'haml'
         generate_haml_layout(admin_layout_name)        
-      end                  
       when 'slim'
         generate_slim_layout(admin_layout_name)        
       end                  
