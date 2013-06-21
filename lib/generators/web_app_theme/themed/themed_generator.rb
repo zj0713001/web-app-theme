@@ -33,6 +33,14 @@ module WebAppTheme
             "  "*7 + %|%a{:href => #{controller_routing_path}_path} #{plural_model_name}\n| +
             "  "*3 + %|#wrapper.wat-cf|
           end
+        elsif options.engine =~ /slim/
+          gsub_file(File.join('app/views/layouts', "#{options[:layout]}.html.#{options.engine}"), /#main-navigation.*#wrapper.wat-cf/mi) do |match|
+            match.gsub!(/      #wrapper.wat-cf/, "")
+            %|#{match}| +
+            "  "*6 + %|li(class = %| + '"#{controller.controller_path == ' + @controller_file_path + %| ? 'active' : ''}"\n| +
+            "  "*7 + %|a(href = | + '"#{' + %|#{controller_routing_path}_path #{plural_model_name}"\n| +
+            "  "*3 + %|#wrapper.wat-cf|
+          end
         end
       end
     end
@@ -108,7 +116,13 @@ module WebAppTheme
         }
       }
       selected_views = views[options.themed_type]
-      options.engine == 'haml' ? generate_haml_views(selected_views) : generate_erb_views(selected_views)
+      case options.engine
+      when 'erb'
+        generate_erb_views(selected_views)
+      when 'haml'
+        generate_haml_views(selected_views)
+      when 'slim'
+        generate_slim_views(selected_views)
     end
     
     def generate_erb_views(views)
@@ -131,6 +145,23 @@ module WebAppTheme
       
     rescue LoadError
       say "HAML is not installed, or it is not specified in your Gemfile."
+      exit
+    end
+
+    def generate_slim_layout(views)
+      require 'slim'
+      Dir.mktmpdir('web-app-theme-slim') do |slim_root|
+        views.each do |template_name, output_path|
+          tmp_html_path = "#{slim_root}/#{template_name}"
+          tmp_slim_path = "#{slim_root}/#{template_name}.slim"
+          template template_name, tmp_html_path, :verbose => false
+          `erb2slim #{tmp_html_path} #{tmp_slim_path}`
+          copy_file tmp_slim_path, output_path
+        end
+      end
+      
+    rescue LoadError
+      say "HTML2SLIM is not installed, or it is not specified in your Gemfile."
       exit
     end
   end
